@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Flexible Seating Charts</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+  /* --- Global Styles --- */
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Quicksand', sans-serif;
+    background: #f4f7f6;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    user-select: none;
+  }
+
+  .page-wrapper {
+    background-color: #ffffff;
+    padding: 35px;
+    border-radius: 25px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    max-width: 1600px;
+  }
+
+  /* --- Header & Controls --- */
+  .main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f1f1f1;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .main-header h1 {
+    font-family: 'Pacifico', cursive;
+    font-size: 2.2em;
+    color: #343a40;
+    margin: 0;
+  }
+
+  .controls-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background-color: #343a40; color: white; }
+  .btn-primary:hover { background-color: #495057; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-danger { background-color: #e03131; color: white; }
+  .btn-danger:hover { background-color: #c92a2a; }
+
+  /* --- Input Area --- */
+  .input-group {
+    display: flex;
+    gap: 5px;
+  }
+  #newStudentName {
+    padding: 10px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 500;
+  }
+
+  /* --- Tab Navigation --- */
+  .tab-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+  }
+  .tab-btn {
+    font-size: 1.1em;
+    padding: 10px 25px;
+    background-color: #f8f9fa;
+    border: 2px solid #dee2e6;
+    color: #495057;
+    cursor: pointer;
+  }
+  .tab-btn:hover { background-color: #e9ecef; }
+  .tab-btn.active {
+    background-color: #228be6;
+    color: white;
+    border-color: #228be6;
+  }
+
+  /* --- Seating Grid System --- */
+  .seating-chart-wrapper { display: none; }
+  .seating-chart-wrapper.active { display: block; }
+
+  .seating-grid {
+    display: grid;
+    /* 12 columns */
+    grid-template-columns: repeat(12, 1fr); 
+    /* 8 Rows (7 for seats, 1 for static labels) */
+    grid-template-rows: repeat(7, 80px) 60px; 
+    gap: 10px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 15px;
+    border: 1px solid #eee;
+  }
+
+  @media (max-width: 1000px) {
+    .page-wrapper { overflow-x: auto; }
+    .seating-grid { min-width: 1000px; }
+  }
+
+  /* Standard Cell */
+  .grid-cell {
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 10px;
+    border: 1px dashed #dcdcdc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .grid-cell.drag-over {
+    background-color: #dbe4ff;
+    border-color: #228be6;
+  }
+
+  /* Static Zones (Door, Front, Stuff) */
+  .static-zone {
+    background-color: #6c757d;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  /* The Student (Draggable) */
+  .student {
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    border: 2px solid #adb5bd;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-weight: 700;
+    font-size: clamp(0.7rem, 1.2vw, 1rem);
+    padding: 5px;
+    cursor: grab;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    z-index: 2;
+    transition: transform 0.1s;
+  }
+  
+  .student:hover {
+    border-color: #228be6;
+    color: #228be6;
+  }
+
+  .student.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+
+  /* Trash Zone */
+  .trash-zone {
+    margin-top: 15px;
+    padding: 15px;
+    border: 2px dashed #ff8787;
+    border-radius: 12px;
+    background-color: #fff5f5;
+    color: #c92a2a;
+    text-align: center;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .trash-zone.drag-over {
+    background-color: #ffe3e3;
+    transform: scale(1.02);
+  }
+
+  .instructions {
+    text-align: center;
+    color: #868e96;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+  <header class="main-header">
+    <h1>Classroom Layout</h1>
+    
+    <div class="controls-area">
+      <div class="input-group">
+        <input type="text" id="newStudentName" placeholder="Name..." onkeydown="if(event.key==='Enter') addStudent()">
+        <button class="btn-primary" onclick="addStudent()">Add Student</button>
+      </div>
+      <button class="btn-primary" onclick="randomizeInPlace()">Randomize (In Place)</button>
+      <button class="btn-danger" onclick="clearBoard()">Clear All</button>
+    </div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('y7')">Y7 Class</button>
+    <button class="tab-btn" onclick="switchTab('y8')">Y8 Class</button>
+    <button class="tab-btn" onclick="switchTab('y9')">Y9 Class</button>
+  </nav>
+
+  <div class="instructions">
+    Drag to move. Double-click to rename. Drag to trash to remove.
+  </div>
+
+  <main id="app-container">
+    <!-- Grid generated via JS -->
+  </main>
+
+  <div class="trash-zone" id="trashZone">
+    🗑️ Drag here to remove student
+  </div>
+</div>
+
+<script>
+  // --- Configuration ---
+  const GRID_COLS = 12;
+  const GRID_ROWS = 8; 
+  // Total cells logic: 
+  // Rows 0-6 (7 rows) are student seats = 84 cells.
+  // Row 7 (8th row) is for static labels.
+  
+  // Define Static Zones (Row 8, 0-indexed is row 7)
+  // Index = (Row * Cols) + Col
+  // Row 7 starts at index 84.
+  const STATIC_ZONES = {
+    84: { text: "Door", span: 2, type: 'door' }, // Col 1-2
+    88: { text: "Front", span: 4, type: 'front' }, // Col 5-8
+    93: { text: "Mr. David's Stuff", span: 3, type: 'stuff' } // Col 10-12
+  };
+
+  const defaultData = {
+    'y7': ["Luna", "Elsa", "Mark", "Aaron", "Kimi", "Riva", "Alice", "Michelle", "Emily", "Anna", "Lilly", "Chloe", "Wendy", "Hunter", "Sophie", "Ellie", "Amy", "William", "LJ", "Vicente", "Anders", "Daniel", "Eric", "Andrew", "Ivy"],
+    'y8': ["Luna", "Elsa", "Mark", "Aaron", "Kimi", "Riva", "Alice", "Michelle", "Philip", "Angelo", "Jayden", "Ella", "Anna", "Annie", "Luna B", "Seoa", "Luca", "Luke", "Harry"],
+    'y9': ["Luna", "Elsa", "Mark", "Aaron", "Kimi", "Riva", "Alice", "Michelle", "Riche", "Ruby", "Sophia", "Alice B", "William", "Ethan", "Tim", "Sophia L", "Aleksei", "Julia", "Nicolas", "Edmond", "Angel", "Konstantine", "Anna", "Rachel", "Cindy", "Anne"]
+  };
+
+  let currentClass = 'y7';
+  let draggedElement = null;
+  let sourceCell = null;
+
+  // --- Initialization ---
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAllClasses();
+    renderGrid();
+    setupTrash();
+  });
+
+  function switchTab(classId) {
+    currentClass = classId;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.onclick.toString().includes(classId));
+    });
+    renderGrid();
+  }
+
+  // --- Grid Rendering ---
+  function renderGrid() {
+    const container = document.getElementById('app-container');
+    container.innerHTML = '';
+    
+    const gridWrapper = document.createElement('div');
+    gridWrapper.className = 'seating-grid';
+    
+    let classData = getClassData(currentClass);
+    let cellCount = GRID_COLS * GRID_ROWS;
+
+    for (let i = 0; i < cellCount; i++) {
+      // Check if this index starts a static zone
+      if (STATIC_ZONES[i]) {
+        const zone = STATIC_ZONES[i];
+        const staticDiv = document.createElement('div');
+        staticDiv.className = 'static-zone';
+        staticDiv.innerText = zone.text;
+        staticDiv.style.gridColumn = `span ${zone.span}`;
+        gridWrapper.appendChild(staticDiv);
+        
+        // Skip loop iterations for the spanned cells
+        i += (zone.span - 1);
+        continue;
+      }
+      
+      // Check if this index is "inside" a static zone that wasn't defined explicitly 
+      // (This is handled by the 'continue' above, but we also need to skip Empty spaces in the bottom row if not defined)
+      // Row 7 starts at 84. If it's not in STATIC_ZONES, render an empty filler or regular cell?
+      // Let's render a regular cell, but it won't be draggable if we don't want. 
+      // For flexibility, let's allow dropping anywhere not static.
+
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.dataset.index = i;
+      
+      // Events
+      cell.addEventListener('dragover', handleDragOver);
+      cell.addEventListener('dragleave', handleDragLeave);
+      cell.addEventListener('drop', handleDrop);
+
+      // Add Student if data exists
+      if (classData[i]) {
+        const student = createStudentElement(classData[i]);
+        cell.appendChild(student);
+      }
+
+      gridWrapper.appendChild(cell);
+    }
+    
+    container.appendChild(gridWrapper);
+  }
+
+  function createStudentElement(name) {
+    const div = document.createElement('div');
+    div.className = 'student';
+    div.draggable = true;
+    div.innerText = name;
+    
+    div.addEventListener('dblclick', function() {
+      const newName = prompt("Edit name:", this.innerText);
+      if (newName !== null) {
+        if(newName.trim() === "") {
+            this.remove(); 
+        } else {
+            this.innerText = newName;
+        }
+        saveCurrentState();
+      }
+    });
+
+    div.addEventListener('dragstart', (e) => {
+      draggedElement = div;
+      sourceCell = div.parentNode;
+      setTimeout(() => div.classList.add('dragging'), 0);
+    });
+
+    div.addEventListener('dragend', () => {
+      div.classList.remove('dragging');
+      draggedElement = null;
+      sourceCell = null;
+      document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('drag-over'));
+      document.getElementById('trashZone').classList.remove('drag-over');
+    });
+
+    return div;
+  }
+
+  // --- Logic ---
+
+  function handleDragOver(e) { e.preventDefault(); this.classList.add('drag-over'); }
+  function handleDragLeave(e) { this.classList.remove('drag-over'); }
+  function handleDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    if (!draggedElement) return;
+
+    const targetCell = this;
+    const existingStudent = targetCell.querySelector('.student');
+
+    if (sourceCell !== targetCell) {
+      if (existingStudent) {
+        sourceCell.appendChild(existingStudent); // Swap
+      }
+      targetCell.appendChild(draggedElement);
+      saveCurrentState();
+    }
+  }
+
+  function setupTrash() {
+    const trash = document.getElementById('trashZone');
+    trash.addEventListener('dragover', (e) => { e.preventDefault(); trash.classList.add('drag-over'); });
+    trash.addEventListener('dragleave', () => { trash.classList.remove('drag-over'); });
+    trash.addEventListener('drop', (e) => {
+      e.preventDefault();
+      trash.classList.remove('drag-over');
+      if (draggedElement) {
+        draggedElement.remove();
+        saveCurrentState();
+      }
+    });
+  }
+
+  function addStudent() {
+    const input = document.getElementById('newStudentName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    const cells = document.querySelectorAll('.grid-cell');
+    let added = false;
+    // Don't add to row 8 (static row) generally, but code allows it if there is a gap.
+    for (let cell of cells) {
+      if (!cell.hasChildNodes()) {
+        cell.appendChild(createStudentElement(name));
+        input.value = '';
+        added = true;
+        saveCurrentState();
+        break;
+      }
+    }
+    if (!added) alert("Grid is full!");
+  }
+
+  // --- SMART RANDOMIZATION ---
+  function randomizeInPlace() {
+    if(!confirm("Shuffle students across currently occupied seats?")) return;
+
+    // 1. Identify valid cells (cells that currently have a student)
+    const allCells = Array.from(document.querySelectorAll('.grid-cell'));
+    const occupiedCells = allCells.filter(cell => cell.querySelector('.student'));
+    
+    if (occupiedCells.length < 2) return; // Nothing to shuffle
+
+    // 2. Extract students
+    const students = occupiedCells.map(cell => cell.querySelector('.student'));
+
+    // 3. Shuffle students array
+    for (let i = students.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [students[i], students[j]] = [students[j], students[i]];
+    }
+
+    // 4. Place them back into the occupiedCells list
+    // This ensures students only go where seats are currently setup
+    occupiedCells.forEach((cell, index) => {
+        // Detach from old parent and attach to new
+        cell.appendChild(students[index]);
+    });
+
+    saveCurrentState();
+  }
+
+  function clearBoard() {
+    if(!confirm("Clear all students?")) return;
+    document.querySelectorAll('.grid-cell').forEach(cell => cell.innerHTML = '');
+    saveCurrentState();
+  }
+
+  // --- Storage ---
+  function getClassData(classId) {
+    const store = JSON.parse(localStorage.getItem('seatingChartData_v2')) || {};
+    return store[classId] || {};
+  }
+
+  function loadAllClasses() {
+    let store = JSON.parse(localStorage.getItem('seatingChartData_v2'));
+    if (!store) {
+      store = {};
+      for (const [cls, names] of Object.entries(defaultData)) {
+        store[cls] = {};
+        names.forEach((name, index) => {
+          store[cls][index] = name;
+        });
+      }
+      localStorage.setItem('seatingChartData_v2', JSON.stringify(store));
+    }
+  }
+
+  function saveCurrentState() {
+    const cells = document.querySelectorAll('.grid-cell');
+    let currentData = {};
+    cells.forEach(cell => {
+      if (cell.firstChild && cell.firstChild.classList.contains('student')) {
+        currentData[cell.dataset.index] = cell.firstChild.innerText;
+      }
+    });
+
+    let store = JSON.parse(localStorage.getItem('seatingChartData_v2')) || {};
+    store[currentClass] = currentData;
+    localStorage.setItem('seatingChartData_v2', JSON.stringify(store));
+  }
+</script>
+</body>
+</html>

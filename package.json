@@ -1,0 +1,63 @@
+{
+  "name": "zenith-os",
+  "version": "1.0.0",
+  "description": "Frictionless curriculum design and local sync.",
+  "main": "main.js",
+  "author": "David Wood",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "electron-builder install-app-deps",
+    "dist": "npm run postinstall && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.0"
+  },
+  "build": {
+    "appId": "com.davidwood.zenith",
+    "productName": "CurriculumOS",
+    "extends": null,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "index.html",
+      "main.js",
+      "preload.js",
+      "!dist",
+      "!build",
+      "!.*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education",
+      "icon": "build/zenith.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": {
+        "teamId": "7FLJU56XLK"
+      }
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "sign": false
+    }
+  }
+}

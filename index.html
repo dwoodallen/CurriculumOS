@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CurriculumOS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <input type="file" id="import-node-input" accept=".json,.txt" style="display:none;"
+        onchange="processNodeImport(event)">
+
+    <div id="welcome-screen" class="active">
+        <div class="welcome-hero">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" fill="var(--bg-card)" stroke="#222" stroke-width="2" />
+                <path d="M30 40 L50 25 L70 40 L70 70 L30 70 Z" stroke="var(--text-light)" stroke-width="3"
+                    stroke-linejoin="round" />
+                <path d="M50 25 L50 70" stroke="var(--text-light)" stroke-width="3" stroke-linecap="round" />
+                <circle cx="50" cy="50" r="6" fill="var(--accent-primary)" />
+            </svg>
+            <h1 class="welcome-title">CurriculumOS</h1>
+            <p class="welcome-subtitle">Frictionless curriculum design. Directly synced to your file system.</p>
+        </div>
+
+        <div class="welcome-actions">
+            <button type="button" class="btn btn-primary" onclick="openImportModal('course')">Import Course</button>
+            <span style="border-left: 1px solid #333; height: 30px; margin: 0 10px; align-self: center;"></span>
+            <button type="button" class="btn btn-ghost" onclick="exportZipBackup()">Export ZIP Backup</button>
+            <button type="button" class="btn btn-ghost" onclick="importZipBackup()">Import ZIP Backup</button>
+            <button type="button" class="btn btn-ghost theme-toggle-btn" onclick="toggleTheme()">☀️ Light Mode</button>
+        </div>
+
+        <div class="class-grid" id="class-cards-container"></div>
+
+        <div class="local-dir-banner">
+            <div style="font-size: 2rem;">🗂️</div>
+            <div style="flex: 1; text-align: left;">
+                <h3 style="margin-bottom: 0; color: var(--text-light); font-size: 1.1rem;">Library Sandbox Active</h3>
+            </div>
+            <button type="button" class="btn btn-outline" style="border-color: #444;" onclick="openLibraryFolder()">📂
+                Open Library</button>
+        </div>
+
+    </div>
+
+    <div id="workspace">
+
+        <div id="tree-pane">
+            <div class="pane-header">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;">
+                    <h2 style="font-size: 1rem; color: #888; display: flex; align-items: center; gap: 8px;"><svg
+                            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg> CurriculumOS</h2>
+                    <button type="button" class="btn-icon" onclick="goHome()" title="Home"
+                        style="margin-right: -6px;">🏠</button>
+                </div>
+                <div class="pane-header-controls" style="margin-top: 15px;">
+                    <h3>Outline</h3>
+                    <button type="button" class="btn btn-ghost" style="padding: 4px 8px; border: 1px solid #333;"
+                        onclick="collapseAll()" title="Collapse All">⊟ All</button>
+                </div>
+            </div>
+            <div id="tree-container"></div>
+        </div>
+
+        <div id="pane-resizer"></div>
+
+        <div id="editor-pane">
+            <div class="pane-toggles">
+                <button type="button" class="btn-icon" style="background: #0a0a0a; border: 1px solid #222;"
+                    onclick="toggleTreePane()" title="Toggle Outline">▦</button>
+            </div>
+            <div class="top-right-actions">
+                <button type="button" class="btn btn-sidebar btn-publish" onclick="publishActiveCourse()">🚀 Publish Course to Directory</button>
+                <button type="button" class="btn btn-sidebar btn-publish" onclick="publishAllCourses()" style="margin-top: 4px; background: var(--accent-primary); border-color: var(--accent-primary); color: white;">🚀 Publish ALL to Directory</button>
+                <button type="button" class="btn btn-sidebar" onclick="openCourseFolder()">📂 Open in Finder</button>
+                <button type="button" class="btn btn-sidebar" onclick="openPresentationMode(activeEditingNodeId)">📺
+                    Present</button>
+                <button type="button" class="btn btn-sidebar" onclick="togglePreviewMode(true)">👁️ Generate
+                    Preview</button>
+                <button type="button" class="btn btn-sidebar" onclick="openExportModal()">💾 Export Assets</button>
+                <button type="button" class="btn btn-sidebar" onclick="openSeatingChart(); event.stopPropagation();">🪑 Seating Chart</button>
+                <button type="button" class="btn btn-sidebar" onclick="openSettings()">⚙️ Settings</button>
+                <button type="button" class="btn btn-sidebar theme-toggle-btn" onclick="toggleTheme()">☀️ Light
+                    Mode</button>
+                <button type="button" class="btn btn-sidebar" style="color: #ef4444;"
+                    onclick="deleteCurrentCourse()">🗑️ Delete Course</button>
+            </div>
+
+            <div id="editor-scroll">
+                <div id="editor-empty" class="empty-state">
+                    <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">✍️</div>
+                    <h2>Blank Canvas</h2>
+                    <p>Select an item from the outline, or create a new one.</p>
+                    <div style="display: flex; gap: 15px;">
+                        <button type="button" class="btn btn-primary" onclick="addNode('root', 'block')">New
+                            Activity</button>
+                        <div style="display: flex; align-items: center; gap: 8px; color: #555;">
+                            or press <span class="kbd-shortcut">Cmd/Ctrl + N</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="editor-active-block" class="editor-container">
+                    <div class="badge badge-block" id="ed-badge-block">Activity</div>
+                    <input type="text" id="ed-title-block" class="editor-title-input" placeholder="Untitled Document"
+                        oninput="handleTitleInput(this.value)">
+                    <div class="editor-path-container" style="display: none;">
+                        <div id="ed-path-block" class="editor-path">/path/to/file.html</div>
+                    </div>
+
+                    <div class="editor-body">
+
+                        <div class="field-group meta">
+                            <textarea id="ed-desc" class="rich-textarea"
+                                placeholder="Add an optional description or learning objective here... (auto-resizes)"
+                                oninput="autoResize(this); updateActiveNode('description', this.value)"></textarea>
+                        </div>
+
+                        <div style="margin-top: 10px; padding-top: 20px; border-top: 1px dashed #222;">
+                            <label
+                                style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.05em;">Document
+                                Format</label>
+                            <select id="asset-type-select" class="modern-select" onchange="setAssetType(this.value)">
+                                <option value="empty">Draft / None</option>
+                                <option value="raw">Raw Text</option>
+                                <option value="html">HTML Code</option>
+                                <option value="latex">Document (PDF/LaTeX/Typst)</option>
+                                <option value="json">Custom Data</option>
+                                <option value="link">Website</option>
+                                <option value="file">Attached File</option>
+                                <option value="epub">EPUB Document</option>
+                            </select>
+                        </div>
+
+                        <div id="fg-raw" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Raw
+                                    Text & Preview</label>
+                            </div>
+                            <div id="raw-split-view" class="split-view-container">
+                                <textarea id="ed-raw" class="code-textarea"
+                                    placeholder="Start writing your document here..."
+                                    oninput="updateActiveNode('raw', this.value); scheduleRawPreview(this.value);"></textarea>
+                                <div id="raw-preview-container" class="split-preview-wrap" style="height: 500px;">
+                                    <iframe id="ed-raw-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: white;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="fg-html" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Interactive
+                                    Code & Live Preview</label>
+                                <button type="button" class="btn btn-ghost" id="html-minimize-code-btn"
+                                    onclick="toggleMinimizeCode('html')" style="border: 1px solid #333;">⊟ Hide
+                                    Code</button>
+                                <button type="button" class="btn btn-ghost" id="html-maximize-btn"
+                                    onclick="toggleMaximizeHtml()" style="border: 1px solid #333;">⛶ Maximize
+                                    Editor</button>
+                            </div>
+                            <div id="html-split-view" class="split-view-container">
+                                <textarea id="ed-html" class="code-textarea"
+                                    placeholder="<html>\n  <body>\n    Interactive content here...\n  </body>\n</html>"
+                                    oninput="updateActiveNode('html', this.value); document.getElementById('ed-html-preview').srcdoc = this.value;"></textarea>
+                                <div id="html-preview-container" class="split-preview-wrap" style="height: 500px;">
+                                    <iframe id="ed-html-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: white;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="fg-latex" class="field-group">
+                            <label style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Document Sub-Format</label>
+                            <select id="ed-latex-subtype" class="modern-select" onchange="setLatexSubtype(this.value)" style="margin-bottom: 15px;">
+                                <option value="latex">LaTeX Code</option>
+                                <option value="typst">Typst Code</option>
+                                <option value="pdf">Attached PDF</option>
+                            </select>
+
+                            <div id="document-pdf-container" style="display: none;">
+                                <div style="margin-bottom: 15px; padding: 15px; border: 1px dashed #333; border-radius: var(--radius-sm); background: #050505;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="font-size: 0.8rem; color: #888;">
+                                        <strong>Attach Pre-compiled PDF</strong><br>
+                                        Overrides local compilation during publish.
+                                    </div>
+                                    <input type="file" id="ed-latex-file-input" accept=".pdf" style="display: none;"
+                                        onchange="handleLatexFile(this.files[0])">
+                                    <button type="button" class="btn btn-outline"
+                                        style="padding: 6px 12px; font-size: 0.8rem;"
+                                        onclick="document.getElementById('ed-latex-file-input').click()"
+                                        id="latex-attach-btn">📎 Attach PDF</button>
+                                </div>
+                                <div id="latex-file-active-area"
+                                    style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #222; align-items: center; justify-content: space-between;">
+                                    <span id="attached-latex-file-name"
+                                        style="font-family: monospace; font-size: 0.8rem; color: var(--accent-primary);"></span>
+                                    <button type="button" class="btn btn-ghost"
+                                        style="color: var(--danger); padding: 2px 6px;" onclick="removeLatexFile()">✕
+                                        Remove</button>
+                                </div>
+                            </div>
+                            <div id="latex-pdf-preview-container" class="split-preview-wrap" style="height: 800px; margin-top: 20px;">
+                                <iframe id="ed-latex-pdf-preview" style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #111;"></iframe>
+                            </div>
+                            </div>
+
+                            <div id="document-latex-container">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <label
+                                        style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">LaTeX
+                                        Code & Preview</label>
+                                    <label
+                                        style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #aaa; cursor: pointer;"
+                                        id="latex-auto-toggle-container">
+                                        <input type="checkbox" id="latex-auto-toggle"
+                                            onchange="autoCompileLatex = this.checked; updateCompileUI(); saveWorkspace();"
+                                            style="width: auto; padding: 0;"> Auto-Compile
+                                    </label>
+                                    <button type="button" id="latex-manual-btn" class="btn btn-outline"
+                                        style="padding: 4px 10px; font-size: 0.7rem; border-color: #333;"
+                                        onclick="executeLatexCompile(document.getElementById('ed-latex').value)">▶
+                                        Compile Draft</button>
+                                    <span id="latex-compile-status"
+                                        style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase;"></span>
+                                </div>
+                                <button type="button" class="btn btn-ghost" id="latex-minimize-code-btn"
+                                    onclick="toggleMinimizeCode('latex')" style="border: 1px solid #333;">⊟ Hide
+                                    Code</button>
+                                <button type="button" class="btn btn-ghost" id="latex-maximize-btn"
+                                    onclick="toggleMaximizeLatex()" style="border: 1px solid #333;">⛶ Maximize
+                                    Editor</button>
+                            </div>
+
+                            <div id="latex-split-view" class="split-view-container">
+                                <textarea id="ed-latex" class="code-textarea"
+                                    placeholder="\documentclass{article}\n\n\begin{document}\nMath goes here...\n\end{document}"
+                                    oninput="updateActiveNode('latex', this.value); scheduleLatexCompile(this.value);"></textarea>
+                                <div id="latex-preview-container" class="split-preview-wrap" style="height: 500px;">
+                                    <iframe id="ed-latex-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #222;"></iframe>
+                                </div>
+                            </div>
+                            </div>
+
+                            <div id="document-typst-container" style="display: none;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 15px;">
+                                        <label style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Typst Code & Preview</label>
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #aaa; cursor: pointer;" id="typst-auto-toggle-container">
+                                            <input type="checkbox" id="typst-auto-toggle" onchange="autoCompileTypst = this.checked; updateTypstCompileUI(); saveWorkspace();" style="width: auto; padding: 0;"> Auto-Compile
+                                        </label>
+                                        <button type="button" id="typst-manual-btn" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.7rem; border-color: #333;" onclick="executeTypstCompile(document.getElementById('ed-typst').value)">▶ Compile Draft</button>
+                                        <span id="typst-compile-status" style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase;"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-ghost" id="typst-minimize-code-btn" onclick="toggleMinimizeCode('typst')" style="border: 1px solid #333;">⊟ Hide Code</button>
+                                    <button type="button" class="btn btn-ghost" id="typst-maximize-btn" onclick="toggleMaximizeTypst()" style="border: 1px solid #333;">⛶ Maximize Editor</button>
+                                </div>
+                                <div id="typst-split-view" class="split-view-container">
+                                    <textarea id="ed-typst" class="code-textarea" placeholder="= Document Title\n\nWrite your Typst code here..." oninput="updateActiveNode('typst', this.value); scheduleTypstCompile(this.value);"></textarea>
+                                    <div id="typst-preview-container" class="split-preview-wrap" style="height: 500px;">
+                                        <iframe id="ed-typst-preview" style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #222;"></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="fg-json" class="field-group">
+                            <div style="display: flex; gap: 20px; align-items: flex-end; margin-bottom: 15px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Sub-Format</label>
+                                    <select id="ed-json-subtype" class="modern-select" onchange="setJsonSubtype(this.value)">
+                                        <option value="json">Standard JSON</option>
+                                        <option value="srs1">SRS1 Master Composer</option>
+                                        <option value="other">Other / Custom Extension</option>
+                                    </select>
+                                </div>
+                                <div id="json-ext-container" style="flex: 1;">
+                                    <label style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">File Extension</label>
+                                    <input type="text" id="ed-json-ext" placeholder=".json, .srs1" style="padding: 8px 12px;" oninput="updateActiveNode('customExtension', this.value); document.getElementById('ed-path-block').innerText = getPublishPath(activeEditingNodeId);">
+                                </div>
+                                <div id="json-collection-container" style="flex: 1; display: none;">
+                                    <label style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Collection Name</label>
+                                    <input type="text" id="ed-json-collection" placeholder="e.g. Russian Stories" style="padding: 8px 12px;" oninput="updateActiveNode('jsonCollection', this.value); updateSrs1Collection(this.value);">
+                                </div>
+                            </div>
+                            
+                            <div id="json-baseline-editor">
+                                <label style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Raw Data Preview</label>
+                                <textarea id="ed-json" class="code-textarea" placeholder="{\n  &quot;key&quot;: &quot;value&quot;\n}" oninput="updateActiveNode('json', this.value)"></textarea>
+                            </div>
+
+                            <div id="srs1-composer-container" style="display:none; height: 900px; border: 1px solid #222; border-radius: 8px; overflow: hidden; margin-top: 10px;">
+                                <iframe id="srs1-iframe" src="SRS1 Master Composer v7.0.html" style="width:100%; height:100%; border:none;"></iframe>
+                            </div>
+                        </div>
+                        <div id="fg-link" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">External
+                                    Link & Preview</label>
+                            </div>
+                            <div id="link-split-view" class="split-view-container" style="flex-direction: column;">
+                                <input type="url" id="ed-link" placeholder="https://example.com"
+                                    style="padding: 15px; font-size: 1rem; background: #0a0a0a; border: 1px solid #333; margin-bottom: 10px;"
+                                    oninput="updateActiveNode('link', this.value); scheduleLinkPreview(this.value);">
+                                <div id="link-preview-container" class="split-preview-wrap" style="height: 900px;">
+                                    <iframe id="ed-link-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: white;"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="fg-file" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">File
+                                    Attachment & Preview</label>
+                            </div>
+                            <div id="file-split-view" class="split-view-container">
+                                <div style="flex: 0 0 300px;">
+                                    <div id="file-drop-area" class="drop-zone"
+                                        onclick="document.getElementById('ed-file-input').click()">
+                                        <div style="font-size: 1.5rem; margin-bottom: 10px; opacity: 0.6;">📤</div>
+                                        <div style="font-weight: 600; color: #ccc;">Select file to attach</div>
+                                        <input type="file" id="ed-file-input" style="display: none;"
+                                            onchange="handleSingleFile(this.files[0])">
+                                    </div>
+                                    <div id="file-active-area" style="display: none;">
+                                        <div class="file-display"
+                                            style="flex-direction: column; gap: 15px; align-items: center;">
+                                            <span id="attached-file-name"
+                                                style="word-break: break-all; text-align: center;">filename.pdf</span>
+                                            <div style="display: flex; width: 100%; gap: 10px;">
+                                                <button type="button" class="btn btn-outline"
+                                                    style="flex: 1; border-color: #333;"
+                                                    onclick="openAttachedFile()">Open</button>
+                                                <button type="button" class="btn btn-outline"
+                                                    style="color: var(--danger); flex: 1; border-color: #333;"
+                                                    onclick="removeAttachedFile()">✕ Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="file-preview-container" class="split-preview-wrap"
+                                    style="height: 900px; position: relative; flex: 1;">
+                                    <iframe id="ed-file-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #111;"></iframe>
+                                    <div id="ed-office-preview-container" class="office-preview-wrap"
+                                        style="display: none; position: absolute; top:0; left:0; width:100%; height:100%;">
+                                        <div class="office-preview-header">
+                                            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b;">Office
+                                                Document Preview</span>
+                                            <button type="button" class="btn btn-outline"
+                                                style="padding: 4px 10px; font-size: 0.75rem; border-color: #cbd5e1; color: #0f172a;"
+                                                onclick="openAttachedFile()">Open in Native App</button>
+                                        </div>
+                                        <div class="preview-loading-overlay" id="ed-office-loading">
+                                            <div class="spinner"></div>
+                                            <div class="loading-text">Generating Preview...</div>
+                                        </div>
+                                        <iframe id="ed-office-iframe" class="office-preview-iframe"></iframe>
+                                    </div>
+                                    <div id="file-preview-fallback" class="empty-state"
+                                        style="display: none; background: #111; border: 1px solid #222; border-radius: var(--radius-sm); position: absolute; top:0; left:0; width:100%; height:100%;">
+                                        <div style="font-size: 3.5rem; margin-bottom: 15px; opacity: 0.5;">📦</div>
+                                        <h3 style="color: #ccc; font-size: 1.1rem; margin-bottom: 5px;">No Preview
+                                            Available</h3>
+                                        <p style="color: #666; font-size: 0.85rem; padding: 0 40px; margin: 0;">This
+                                            file format cannot be rendered natively. Click "Open File" to view it
+                                            externally.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="fg-video" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">Video
+                                    Source & Player</label>
+                            </div>
+                            <div id="video-split-view" class="split-view-container">
+                                <div style="flex: 1; display: flex; flex-direction: column; gap: 15px; max-width: 30%;">
+                                    <input type="url" id="ed-video-link" placeholder="YouTube Link (https://...)"
+                                        style="padding: 15px; font-size: 0.9rem; background: #0a0a0a; border: 1px solid #333;"
+                                        oninput="updateActiveNode('videoLink', this.value); scheduleVideoPreview();">
+                                    <div
+                                        style="text-align: center; color: #666; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">
+                                        OR</div>
+                                    <div id="video-drop-area" class="drop-zone"
+                                        onclick="document.getElementById('ed-video-file-input').click()">
+                                        <div style="font-size: 1.5rem; margin-bottom: 10px; opacity: 0.6;">📤</div>
+                                        <div style="font-weight: 600; color: #ccc;">Select local video</div>
+                                        <input type="file" id="ed-video-file-input"
+                                            accept="video/mp4,video/webm,video/ogg" style="display: none;"
+                                            onchange="handleSingleVideoFile(this.files[0])">
+                                    </div>
+                                    <div id="video-active-area" style="display: none;">
+                                        <div class="file-display"
+                                            style="flex-direction: column; gap: 15px; align-items: center;">
+                                            <span id="attached-video-name"
+                                                style="word-break: break-all; text-align: center;">video.mp4</span>
+                                            <div style="display: flex; width: 100%; gap: 10px;">
+                                                <button type="button" class="btn btn-outline"
+                                                    style="color: var(--danger); flex: 1; border-color: #333;"
+                                                    onclick="removeAttachedVideo()">✕ Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="video-preview-container" class="split-preview-wrap"
+                                    style="height: 900px; position: relative;">
+                                    <iframe id="ed-video-yt-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #111; display: none;"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                                    <video id="ed-video-file-preview"
+                                        style="width: 100%; height: 100%; border: 1px solid #222; border-radius: var(--radius-sm); background: #111; display: none;"
+                                        controls></video>
+                                    <div id="video-preview-fallback" class="empty-state"
+                                        style="background: #111; border: 1px solid #222; border-radius: var(--radius-sm); position: absolute; top:0; left:0; width:100%; height:100%;">
+                                        <div style="font-size: 3.5rem; margin-bottom: 15px; opacity: 0.5;">🎬</div>
+                                        <h3 style="color: #ccc; font-size: 1.1rem; margin-bottom: 5px;">No Video Source
+                                        </h3>
+                                        <p style="color: #666; font-size: 0.85rem; padding: 0 40px; margin: 0;">Add a
+                                            YouTube link or local file.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="fg-epub" class="field-group">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <label
+                                    style="font-size: 0.75rem; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 0.05em;">EPUB
+                                    Viewer</label>
+                                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; background: #0a0a0a; padding: 6px 12px; border-radius: 8px; border: 1px solid #222;">
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubFontSize(-10)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;" title="Decrease Font Size">A-</button>
+                                        <span id="epub-font-size-display" style="font-size: 0.7rem; font-weight: 800; color: #666; min-width: 35px; text-align: center;">100%</span>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubFontSize(10)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;" title="Increase Font Size">A+</button>
+                                    </div>
+                                    <div style="height: 14px; width: 1px; background: #333;"></div>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <span style="font-size: 0.6rem; color: #555; text-transform: uppercase; font-weight: 800;">Margin</span>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubMargin(-10)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">-</button>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubMargin(10)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">+</button>
+                                    </div>
+                                    <div style="height: 14px; width: 1px; background: #333;"></div>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <span style="font-size: 0.6rem; color: #555; text-transform: uppercase; font-weight: 800;">Line</span>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubLineHeight(-0.1)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">-</button>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubLineHeight(0.1)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">+</button>
+                                    </div>
+                                    <div style="height: 14px; width: 1px; background: #333;"></div>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <span style="font-size: 0.6rem; color: #555; text-transform: uppercase; font-weight: 800;">Para</span>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubParagraphSpacing(-0.1)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">-</button>
+                                        <button type="button" class="btn btn-ghost" onclick="changeEpubParagraphSpacing(0.1)" style="border: 1px solid #333; padding: 2px 6px; font-size: 0.7rem;">+</button>
+                                    </div>
+                                    <div style="height: 14px; width: 1px; background: #333;"></div>
+                                    <button type="button" class="btn btn-ghost" onclick="clearEpubHighlights()" style="border: 1px solid #333; padding: 2px 8px; color: var(--danger); font-size: 0.65rem; text-transform: uppercase; font-weight: 800;">Clear HL</button>
+                                </div>
+                            </div>
+                            <div id="epub-split-view" class="split-view-container">
+                                <div style="flex: 1; display: flex; flex-direction: column; gap: 15px; max-width: 30%;">
+                                    <div id="epub-drop-area" class="drop-zone"
+                                        onclick="document.getElementById('ed-epub-file-input').click()">
+                                        <div style="font-size: 1.5rem; margin-bottom: 10px; opacity: 0.6;">📚</div>
+                                        <div style="font-weight: 600; color: #ccc;">Select EPUB file</div>
+                                        <input type="file" id="ed-epub-file-input" accept=".epub" style="display: none;"
+                                            onchange="handleSingleEpubFile(this.files[0])">
+                                    </div>
+                                    <div id="epub-active-area" style="display: none;">
+                                        <div class="file-display"
+                                            style="flex-direction: column; gap: 15px; align-items: center;">
+                                            <span id="attached-epub-name"
+                                                style="word-break: break-all; text-align: center;">book.epub</span>
+                                            <div style="display: flex; width: 100%; gap: 10px;">
+                                                <button type="button" class="btn btn-outline"
+                                                    style="color: var(--danger); flex: 1; border-color: #333;"
+                                                    onclick="removeAttachedEpub()">✕ Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="epub-preview-container" class="split-preview-wrap"
+                                    style="height: 900px; position: relative; background: #fafafa; border: 1px solid #222; border-radius: var(--radius-sm); overflow: hidden;">
+                                    <div id="epub-reader-area"
+                                        style="width: 100%; height: 100%; position: relative; z-index: 1;"></div>
+                                    <div id="epub-nav-prev"
+                                        style="position: absolute; top: 0; bottom: 0; left: 0; width: 40px; background: rgba(0,0,0,0.05); display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 24px; color: #333;"
+                                        onmouseover="this.style.background='rgba(0,0,0,0.1)'"
+                                        onmouseout="this.style.background='rgba(0,0,0,0.05)'">‹</div>
+                                    <div id="epub-nav-next"
+                                        style="position: absolute; top: 0; bottom: 0; right: 0; width: 40px; background: rgba(0,0,0,0.05); display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 24px; color: #333;"
+                                        onmouseover="this.style.background='rgba(0,0,0,0.1)'"
+                                        onmouseout="this.style.background='rgba(0,0,0,0.05)'">›</div>
+
+                                    <div id="epub-preview-fallback" class="empty-state"
+                                        style="background: #111; position: absolute; top:0; left:0; width:100%; height:100%; z-index: 20;">
+                                        <div style="font-size: 3.5rem; margin-bottom: 15px; opacity: 0.5;">📖</div>
+                                        <h3 style="color: #ccc; font-size: 1.1rem; margin-bottom: 5px;">No EPUB Attached
+                                        </h3>
+                                        <p style="color: #666; font-size: 0.85rem; padding: 0 40px; margin: 0;">Upload
+                                            an EPUB file to read it directly.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="editor-active-folder" class="editor-container">
+                    <div id="ed-badge-folder" class="badge badge-l1">Unit</div>
+                    <input type="text" id="ed-title-folder" class="editor-title-input" placeholder="Untitled Folder"
+                        oninput="handleTitleInput(this.value)">
+                    <div class="editor-path-container" style="margin-bottom: 20px; display: none;">
+                        <div id="ed-path-folder" class="editor-path">/path/to/folder/</div>
+                    </div>
+                    <div>
+                        <textarea id="ed-folder-obj" class="rich-textarea"
+                            placeholder="Optional overarching goals for this section... (auto-resizes)"
+                            oninput="autoResize(this); updateActiveNode('objectives', this.value)"></textarea>
+                    </div>
+                    <div id="fd-timeline" class="timeline"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="preview-overlay">
+            <div class="preview-window">
+                <div class="preview-header">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div
+                            style="background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 1.2rem; border: 1px solid #e2e8f0;">
+                            🎓</div>
+                        <div>
+                            <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em;"
+                                id="prev-course-title">Course Name</div>
+                            <div
+                                style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">
+                                Student View Simulation</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-primary"
+                            onclick="openPresentationMode(activeEditingNodeId)">📺 Present</button>
+                        <button type="button" class="btn btn-ghost" style="color: #64748b; border: 1px solid #cbd5e1;"
+                            onclick="togglePreviewMode(false)">Close Preview</button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-sidebar" id="prev-sidebar"></div>
+                    <div class="preview-main">
+                        <div class="preview-page" id="prev-page">
+                            <div class="empty-state" style="color: #64748b;">
+                                <h3>Select a module to begin</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="latex-missing-modal" class="modal-overlay">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 15px;">⚙️</div>
+            <h2 style="margin-bottom: 15px; font-size: 1.5rem;">LaTeX Engine Missing</h2>
+            <p style="color: #888; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.6;">CurriculumOS requires a
+                local LaTeX engine for advanced multilingual rendering. We recommend installing <strong>MacTeX</strong>.
+            </p>
+            <div style="display: flex; justify-content: center;">
+                <button type="button" class="btn btn-primary"
+                    onclick="document.getElementById('latex-missing-modal').classList.remove('active')">I
+                    Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="typst-missing-modal" class="modal-overlay">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 3rem; margin-bottom: 15px;">⚙️</div>
+            <h2 style="margin-bottom: 15px; font-size: 1.5rem;">Typst Engine Missing</h2>
+            <p style="color: #888; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.6;">CurriculumOS requires the
+                experimental <strong>Typst</strong> CLI installed locally to compile Typst files. You can install it via Homebrew (`brew install typst`).
+            </p>
+            <div style="display: flex; justify-content: center;">
+                <button type="button" class="btn btn-primary"
+                    onclick="document.getElementById('typst-missing-modal').classList.remove('active')">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay" style="z-index: 6000;">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="confirm-title" style="font-size: 1.3rem; margin: 0;">Confirm</h2>
+                <button type="button" class="btn-close" onclick="closeConfirmModal()"
+                    style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer; line-height:1;">&times;</button>
+            </div>
+            <div id="confirm-message-container" class="modal-body">
+                <p id="confirm-message"
+                    style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin: 0;"></p>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: auto;">
+                <button id="confirm-cancel-btn" type="button" class="btn btn-ghost"
+                    onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirm-ok-btn" type="button" class="btn btn-primary"
+                    style="background: var(--danger); border-color: var(--danger); color: white;"
+                    onclick="executeConfirm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="universal-import-modal" class="modal-overlay">
+        <div class="modal-content large">
+            <h2 id="ui-modal-title" style="margin-bottom: 10px; font-size: 1.5rem;">Import Data</h2>
+            <p id="ui-modal-desc" style="color: #888; margin-bottom: 20px; font-size: 0.9rem;">Paste JSON payload below
+                or upload file.</p>
+            <textarea id="ui-modal-textarea" class="code-textarea"
+                style="width: 100%; min-height: 300px; margin-bottom: 20px;" placeholder="{ ... }"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-outline"
+                    onclick="document.getElementById('ui-file-input').click()">📁 Select File</button>
+                <input type="file" id="ui-file-input" accept=".json,.txt" style="display:none;"
+                    onchange="handleUIFileInput(event)">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="processTextareaImport()">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="input-modal" class="modal-overlay" style="z-index: 6000;">
+        <div class="modal-content">
+            <h2 id="input-title" style="font-size: 1.3rem; margin-bottom: 15px;">Input Required</h2>
+            <p id="input-message" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;"></p>
+            <input type="text" id="modal-input-field" style="width: 100%; margin-bottom: 25px;" onkeydown="if(event.key==='Enter') executeInputConfirm()">
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-ghost" onclick="closeInputModal()">Cancel</button>
+                <button id="input-ok-btn" type="button" class="btn btn-primary" onclick="executeInputConfirm()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="import-staging-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 10px; font-size: 1.5rem; color: var(--text-light);">Verify Payload</h2>
+            <p style="color: #888; margin-bottom: 20px; font-size: 0.9rem;">Review parsed structural elements before
+                injecting into the outline.</p>
+            <div
+                style="background: #050505; padding: 20px; border-radius: var(--radius-sm); border: 1px solid #222; margin-bottom: 25px;">
+                <div id="staging-stats"
+                    style="font-weight: 600; font-size: 1.1rem; color: var(--text-light); text-align: center;">Folders:
+                    0 | Activities: 0</div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-ghost" onclick="closeStaging()">Discard</button>
+                <button type="button" class="btn btn-primary" onclick="confirmNodeImport()">Confirm Injection</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="course-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 25px; font-size: 1.5rem;">New Course Environment</h2>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label
+                        style="font-size: 0.75rem; font-weight: 700; color: #888; display:block; margin-bottom:8px; text-transform: uppercase;">Course
+                        Title</label>
+                    <input type="text" id="new-c-title" placeholder="e.g., Computer Science 101">
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label
+                            style="font-size: 0.75rem; font-weight: 700; color: #888; display:block; margin-bottom:8px; text-transform: uppercase;">Icon</label>
+                        <input type="text" id="new-c-emoji" value="💻" maxlength="2"
+                            style="font-size: 1.5rem; text-align: center; background: #050505;">
+                        <div class="emoji-picker-grid" id="new-c-emoji-grid"></div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label
+                            style="font-size: 0.75rem; font-weight: 700; color: #888; display:block; margin-bottom:8px; text-transform: uppercase;">Accent
+                            Color</label>
+                        <input type="color" id="new-c-color" value="#8b5cf6"
+                            style="height: 50px; padding: 5px; width: 100%;">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="btn btn-ghost"
+                        onclick="document.getElementById('course-modal').classList.remove('active')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createCourse()">Create Setup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 25px; font-size: 1.5rem;">Environment Settings</h2>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="set-title" placeholder="Title">
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label
+                            style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Icon</label>
+                        <input type="text" id="set-emoji" maxlength="2"
+                            style="text-align: center; font-size: 1.2rem; background: #050505;">
+                        <div class="emoji-picker-grid" id="set-emoji-grid"></div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label
+                            style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Accent
+                            Color</label>
+                        <input type="color" id="set-color" style="height: 50px; padding: 5px; width: 100%;">
+                    </div>
+                </div>
+                <hr style="border: none; border-top: 1px solid #222; margin: 10px 0;">
+                <div>
+                    <label
+                        style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Level
+                        1 Label</label>
+                    <input type="text" id="set-l1" placeholder="e.g., Unit">
+                </div>
+                <div>
+                    <label
+                        style="font-size: 0.7rem; color: #888; display:block; margin-bottom:6px; text-transform: uppercase;">Level
+                        2 Label</label>
+                    <input type="text" id="set-l2" placeholder="e.g., Chapter">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettings()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 25px; font-size: 1.5rem;">Export / Backup</h2>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label
+                        style="font-size: 0.75rem; color: #888; display:block; margin-bottom:8px; text-transform: uppercase;">Format</label>
+                    <select id="export-type" class="modern-select">
+                        <option value="zenith">Native CurriculumOS JSON</option>
+                        <option value="ai">AI Markdown Context</option>
+                    </select>
+                </div>
+                <div>
+                    <label
+                        style="font-size: 0.75rem; color: #888; display:block; margin-bottom:8px; text-transform: uppercase;">Scope</label>
+                    <select id="export-scope" class="modern-select">
+                        <option value="all">Entire Hierarchy</option>
+                    </select>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                    <button type="button" class="btn btn-ghost"
+                        onclick="document.getElementById('export-modal').classList.remove('active')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="executeExport()">Run Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="presentation-overlay" tabindex="-1">
+        <div id="presentation-sticky-container"></div>
+        <div id="presentation-timer-container"></div>
+        <div id="presentation-drag-shield" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20000; display: none;"></div>
+        <div id="presentation-close" class="presentation-control" onclick="closePresentationMode()">✕ Exit</div>
+        <div id="presentation-prev" class="presentation-control" onclick="navigatePresentation(-1)">‹ Prev</div>
+        <div id="presentation-next" class="presentation-control" onclick="navigatePresentation(1)">Next ›</div>
+        <div id="presentation-frame">
+            <div id="presentation-content" class="presentation-page"></div>
+        </div>
+    </div>
+
+    <div id="seating-chart-modal" class="modal-overlay" onclick="if(event.target===this) closeSeatingChart()" style="z-index: 5000;">
+        <div class="modal-content large" style="width: 1200px; height: 90vh; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;" onclick="event.stopPropagation()">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 10px; color: #0f172a;">🪑 Classroom Layout <span id="seating-chart-course-title" style="font-size: 0.9rem; color: #64748b; font-weight: 400;"></span></h2>
+                <button type="button" class="btn btn-ghost" onclick="closeSeatingChart()" style="font-size: 1.2rem; color: #64748b;">✕</button>
+            </div>
+            
+            <div class="seating-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px; background: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="seating-class-selector" onchange="switchSeatingClass(this.value)" style="background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; outline: none;">
+                    </select>
+                    <div style="width: 1px; height: 24px; background: #e2e8f0; margin: 0 5px;"></div>
+                    <input type="text" id="newStudentNameInGrid" placeholder="Student name..." style="width: 200px; background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1;" onkeydown="if(event.key==='Enter') addStudentToGrid()">
+                    <button type="button" class="btn btn-primary" onclick="addStudentToGrid()">Add Student</button>
+                </div>
+                
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div id="selection-info" style="font-size: 0.85rem; color: var(--accent-primary); display: none; font-weight: 700;">0 cells selected</div>
+                    <button type="button" id="create-object-btn" class="btn btn-outline" style="border-color: var(--accent-primary); color: var(--accent-primary); display: none;" onclick="createStaticObject()">Convert Selection to Object</button>
+                    <button type="button" class="btn btn-outline" style="color: #475569; border-color: #cbd5e1;" onclick="randomizeGrid()">Randomize</button>
+                    <button type="button" class="btn btn-outline" style="color: #ef4444; border-color: #fecaca;" onclick="clearGrid()">Clear All</button>
+                </div>
+            </div>
+
+            <div id="seating-grid-container" style="flex: 1; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 20px; overflow: auto;">
+                <div id="seating-grid" style="display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(8, 80px); gap: 10px; width: 100%; min-width: 1000px; margin: 0 auto;">
+                    <!-- Grid cells generated via JS -->
+                </div>
+            </div>
+
+            <div id="grid-trash-zone" style="margin-top: 20px; padding: 15px; border: 2px dashed #333; border-radius: 12px; text-align: center; color: #555; font-weight: 700; transition: all 0.2s;">
+                🗑️ Drag student or object here to remove
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+    <script src="renderer.js"></script>
+</body>
+
+</html>

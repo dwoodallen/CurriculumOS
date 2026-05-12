@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRS1 Master Composer v7.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-card: #334155;
+            --border: #475569;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f59e0b;
+            --accent-cyan: #06b6d4;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .brand { font-weight: 700; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .brand i { color: var(--accent); }
+
+        /* LAYOUT */
+        #workspace { display: flex; flex-grow: 1; overflow: hidden; }
+
+        /* SIDEBAR */
+        aside {
+            width: 300px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(255,255,255,0.02);
+        }
+        .drop-zone:hover { border-color: var(--accent); color: var(--accent); background: rgba(59, 130, 246, 0.05); }
+
+        .meta-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="text"], input[type="number"], select {
+            background: var(--bg-dark); border: 1px solid var(--border);
+            color: white; padding: 0.7rem; border-radius: 6px; width: 100%;
+        }
+        
+        .stat-box {
+            background: var(--bg-dark); border: 1px solid var(--border);
+            padding: 1rem; border-radius: 8px;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .stat-val { font-weight: 700; color: var(--accent-green); }
+
+        /* MAIN AREA */
+        #main-editor {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-dark);
+        }
+
+        /* TABS */
+        .tabs { display: flex; background-color: var(--bg-panel); border-bottom: 1px solid var(--border); }
+        .tab {
+            padding: 1rem 1.5rem; cursor: pointer; color: var(--text-muted); font-weight: 600;
+            border-bottom: 3px solid transparent; transition: 0.2s;
+        }
+        .tab:hover { background-color: var(--bg-card); color: white; }
+        .tab.active { border-bottom-color: var(--accent); color: white; background-color: var(--bg-card); }
+        .tab-badge { background: var(--bg-dark); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+
+        /* PANELS */
+        .panel { display: none; flex-grow: 1; overflow-y: auto; padding: 1.5rem; }
+        .panel.active { display: block; }
+
+        /* TASK BUILDER STYLES */
+        .task-builder-container { display: flex; gap: 2rem; height: 100%; }
+        .task-controls { width: 350px; display: flex; flex-direction: column; gap: 1.5rem; border-right: 1px solid var(--border); padding-right: 1.5rem; overflow-y: auto; }
+        .task-list-area { flex-grow: 1; overflow-y: auto; }
+        
+        .task-form-box {
+            background: var(--bg-panel); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; gap: 10px;
+        }
+        .task-form-box h4 { margin: 0 0 5px 0; color: var(--accent); font-size: 0.9rem; }
+
+        .task-card {
+            background: var(--bg-panel); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1rem; margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: grab;
+        }
+        .task-card:hover { border-color: var(--accent); }
+        .task-card.auto { border-left: 3px solid var(--accent-green); }
+        .task-card.manual { border-left: 3px solid var(--accent-orange); }
+        .task-card.recording { border-left: 3px solid var(--accent-purple); }
+        .task-card.srs-logic { border-left: 3px solid var(--accent-cyan); }
+        
+        .task-info h5 { margin: 0 0 5px 0; font-size: 1rem; }
+        .task-info p { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+        .task-type-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: var(--bg-card); color: var(--text-muted); margin-left: 10px; text-transform: uppercase; }
+
+        /* READING BLOCKS */
+        #reading-list { display: flex; flex-direction: column; gap: 1rem; padding-bottom: 50px; }
+        
+        .para-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            transition: transform 0.2s;
+        }
+        .para-card:hover { border-color: var(--accent); }
+        
+        .drag-handle {
+            width: 30px; background-color: var(--bg-card);
+            display: flex; align-items: center; justify-content: center;
+            cursor: grab; color: var(--text-muted); border-right: 1px solid var(--border);
+            border-top-left-radius: 8px; border-bottom-left-radius: 8px;
+        }
+        .drag-handle:hover { color: white; background-color: var(--accent); }
+
+        .para-content { flex-grow: 1; padding: 1rem; }
+        .para-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
+        
+        .smart-textarea {
+            width: 100%; background: transparent; border: none;
+            color: var(--text-main); font-family: 'Inter', sans-serif;
+            font-size: 1rem; line-height: 1.6; resize: vertical;
+            min-height: 60px; outline: none; border-bottom: 1px dashed var(--border);
+            transition: border-color 0.2s;
+        }
+        .smart-textarea:focus { border-bottom-color: var(--accent); background: rgba(0,0,0,0.1); }
+        
+        .translation-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+            margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);
+            display: none; 
+        }
+        .para-card.expanded .translation-grid { display: grid; }
+
+        .para-actions { 
+            display: flex; flex-direction: column; padding: 0.5rem; 
+            border-left: 1px solid var(--border); gap: 5px; 
+            background: var(--bg-panel); border-top-right-radius: 8px; border-bottom-right-radius: 8px;
+        }
+
+        /* VOCAB TABLE */
+        .vocab-table { width: 100%; border-collapse: collapse; }
+        .vocab-table th { text-align: left; padding: 12px; background: var(--bg-card); position: sticky; top: 0; z-index: 10; font-size: 0.9rem; }
+        .vocab-table td { border-bottom: 1px solid var(--border); padding: 0; background: var(--bg-panel); vertical-align: top; }
+        
+        .vocab-textarea {
+            width: 100%; background: transparent; border: none; color: white; 
+            padding: 10px; font-family: inherit; font-size: 0.9rem; resize: vertical; min-height: 40px;
+        }
+        .vocab-textarea:focus { background: var(--bg-dark); outline: 1px solid var(--accent); }
+        
+        .vocab-row .drag-cell { cursor: grab; text-align: center; color: var(--text-muted); padding-top: 12px; }
+
+        /* BUTTONS & MODALS */
+        .btn { padding: 0.6rem 1.2rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background-color: #2563eb; }
+        .btn-success { background: var(--accent-green); color: white; }
+        .btn-ghost { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-icon { width: 32px; height: 32px; border-radius: 4px; justify-content: center; background: transparent; color: var(--text-muted); }
+        .btn-icon:hover { color: white; background: var(--bg-card); }
+        .btn-icon.delete:hover { background: var(--danger); color: white; }
+        .full-width { width: 100%; justify-content: center; }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 2000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-panel); width: 600px; max-width: 90%;
+            border-radius: 12px; border: 1px solid var(--border); padding: 2rem;
+            display: flex; flex-direction: column; gap: 1rem;
+        }
+        .modal h2 { margin: 0; }
+        .modal-options { display: flex; gap: 10px; background: var(--bg-dark); padding: 10px; border-radius: 8px; }
+        .modal-textarea { 
+            width: 100%; height: 300px; background: var(--bg-dark); 
+            color: var(--text-main); border: 1px solid var(--border); 
+            padding: 1rem; font-family: 'JetBrains Mono', monospace; border-radius: 8px;
+        }
+
+        /* EXPORT GRID */
+        .export-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 1rem;
+        }
+        .export-option {
+            background: var(--bg-dark); border: 1px solid var(--border);
+            border-radius: 8px; padding: 1.5rem; text-align: center;
+            cursor: pointer; transition: 0.2s;
+        }
+        .export-option:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .export-option i { font-size: 2rem; margin-bottom: 10px; display: block; }
+        .export-option h3 { margin: 0 0 5px 0; font-size: 1rem; }
+        .export-option p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+
+        .hidden { display: none; }
+        #json-preview { width:100%; height:100%; background:transparent; border:none; resize:none; font-family: 'JetBrains Mono'; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<!-- MODAL: EXPORT OPTIONS -->
+<div id="export-modal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex; justify-content:space-between;">
+            <h2><i class="fas fa-file-export"></i> Select Export Type</h2>
+            <button class="btn-icon" onclick="app.closeModal('export-modal')"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="meta-group" style="background: var(--bg-dark); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <label style="color: var(--accent);">Target Collection Name</label>
+            <input type="text" id="export-collection-name" placeholder="e.g. Russian Short Stories (Leave blank to use Title)">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 0 0;">
+                Used for grouping chapters in the Reader app.
+            </p>
+        </div>
+        
+        <div class="export-grid">
+            <div class="export-option" style="border-color: var(--accent);" onclick="app.processExport('assignment')">
+                <i class="fas fa-layer-group" style="color: var(--accent);"></i>
+                <h3>Full Assignment</h3>
+                <p>Tasks + Reader + Vocab</p>
+            </div>
+            
+            <div class="export-option" onclick="app.processExport('reader')">
+                <i class="fas fa-book-open" style="color: var(--accent-orange);"></i>
+                <h3>Reader Chapter</h3>
+                <p>Only the bilingual reading text</p>
+            </div>
+
+            <div class="export-option" onclick="app.processExport('srs')">
+                <i class="fas fa-seedling" style="color: var(--accent-green);"></i>
+                <h3>SRS Deck</h3>
+                <p>Only the vocabulary list</p>
+            </div>
+
+            <div class="export-option" onclick="app.processExport('activity')">
+                <i class="fas fa-gamepad" style="color: var(--accent-purple);"></i>
+                <h3>Activity</h3>
+                <p>Only the HTML game file</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PASTE RAW DATA -->
+<div id="paste-modal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex; justify-content:space-between;">
+            <h2><i class="fas fa-clipboard"></i> Paste Data</h2>
+            <button class="btn-icon" onclick="app.closeModal('paste-modal')"><i class="fas fa-times"></i></button>
+        </div>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">
+            Paste JSON, HTML, or raw text here.
+        </p>
+        <textarea id="paste-area" class="modal-textarea" placeholder='e.g., {"english": "cat", "chinese": "猫"} ... or raw paragraphs'></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-ghost" onclick="app.closeModal('paste-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.processPaste()">Ingest Data</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: SMART TEXT IMPORT -->
+<div id="text-import-modal" class="modal-overlay">
+    <div class="modal">
+        <div style="display:flex; justify-content:space-between;">
+            <h2><i class="fas fa-align-left"></i> Text Processing</h2>
+            <button class="btn-icon" onclick="app.closeModal('text-import-modal')"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="modal-options">
+            <label style="align-self:center;">Split Method:</label>
+            <select id="split-method" style="background:var(--bg-panel); color:white; border:1px solid var(--border); padding:5px; border-radius:4px;">
+                <option value="paragraph">Paragraphs (Double Line Break)</option>
+                <option value="line">Lines (Single Line Break)</option>
+                <option value="pdf">PDF Fixer (Join lines, split paragraphs)</option>
+            </select>
+        </div>
+
+        <textarea id="import-textarea" class="modal-textarea" placeholder="Paste your text here..."></textarea>
+        
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn btn-ghost" onclick="app.closeModal('text-import-modal')">Cancel</button>
+            <button class="btn btn-primary" onclick="app.processSmartImport()">Process & Add</button>
+        </div>
+    </div>
+</div>
+
+<header>
+    <div class="brand"><i class="fas fa-cubes"></i> SRS1 Composer v7.0</div>
+    <div style="display:flex; gap:10px;">
+        <button id="save-to-os-btn" class="btn btn-success" style="display:none;" onclick="app.saveToOS()">
+            <i class="fas fa-save"></i> Save to CurriculumOS
+        </button>
+        <button class="btn btn-primary" onclick="app.openExportModal()">
+            <i class="fas fa-download"></i> Export...
+        </button>
+    </div>
+</header>
+
+<div id="workspace">
+    <!-- SIDEBAR -->
+    <aside>
+        <div class="drop-zone" id="global-dropzone">
+            <i class="fas fa-file-import" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+            <strong>Drop Files</strong><br>
+            <span style="font-size:0.8rem; opacity:0.7;">.srs1, .json, .txt, .html</span>
+            <input type="file" id="file-input" multiple class="hidden" onchange="app.handleFiles(this.files)">
+        </div>
+
+        <button class="btn btn-ghost full-width" onclick="app.openPasteModal()">
+            <i class="fas fa-paste"></i> Paste Raw Data / JSON
+        </button>
+
+        <div class="meta-group">
+            <label>Title / Chapter Name</label>
+            <input type="text" id="meta-title" placeholder="Week 1: The Basics">
+        </div>
+        <div class="meta-group">
+            <label>Unique ID (Optional)</label>
+            <input type="text" id="meta-id" placeholder="assign_001">
+        </div>
+
+        <div class="stat-box">
+            <label style="margin-bottom:10px; display:block;">Contents</label>
+            <div class="stat-row"><span>Readings:</span> <span id="stat-readings" class="stat-val">0</span></div>
+            <div class="stat-row"><span>Vocab:</span> <span id="stat-vocab" class="stat-val">0</span></div>
+            <div class="stat-row"><span>Activity:</span> <span id="stat-activity" class="stat-val">No</span></div>
+        </div>
+        
+        <button class="btn btn-ghost" style="margin-top:auto; color:var(--danger); border-color:var(--danger);" onclick="app.clearAll()">
+            <i class="fas fa-trash"></i> Clear Workspace
+        </button>
+    </aside>
+
+    <!-- MAIN EDITOR -->
+    <div id="main-editor">
+        <div class="tabs">
+            <div class="tab active" onclick="app.switchTab('tasks')">Task Builder</div>
+            <div class="tab" onclick="app.switchTab('reading')">Reading <span id="badge-reading" class="tab-badge">0</span></div>
+            <div class="tab" onclick="app.switchTab('vocab')">Vocab <span id="badge-vocab" class="tab-badge">0</span></div>
+            <div class="tab" onclick="app.switchTab('activity')">Activity <span id="badge-activity" class="tab-badge">0</span></div>
+            <div class="tab" onclick="app.switchTab('json')">JSON Preview</div>
+        </div>
+
+        <!-- TASKS PANEL -->
+        <div id="panel-tasks" class="panel active">
+            <div class="task-builder-container">
+                <!-- Controls -->
+                <div class="task-controls">
+                    <!-- Manual Task -->
+                    <div class="task-form-box">
+                        <h4><i class="fas fa-check-square"></i> Add Manual Task</h4>
+                        <div class="meta-group">
+                            <label>Description</label>
+                            <input type="text" id="manual-task-desc" placeholder="e.g. Complete IXL Level 3">
+                        </div>
+                        <div class="meta-group">
+                            <label>Link (Optional)</label>
+                            <input type="text" id="manual-task-url" placeholder="https://ixl.com/...">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.addManualTask()">Add Task</button>
+                    </div>
+
+                    <!-- Recording Task -->
+                    <div class="task-form-box">
+                        <h4><i class="fas fa-microphone"></i> Add Recording Requirement</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">
+                            Links to the reading chapter defined here.
+                        </p>
+                        <div class="meta-group">
+                            <label>Min Duration (Seconds)</label>
+                            <input type="number" id="recording-duration" value="30">
+                        </div>
+                        <div class="meta-group">
+                            <label>Min Count</label>
+                            <input type="number" id="recording-count" value="1">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.addRecordingTask()">Add Requirement</button>
+                    </div>
+
+                    <!-- SRS Logic Tasks -->
+                    <div class="task-form-box">
+                        <h4><i class="fas fa-seedling"></i> SRS Requirements</h4>
+                        <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">
+                            Special tasks controlled by the Vocab Machine logic.
+                        </p>
+                        <button class="btn btn-ghost btn-sm full-width" onclick="app.addSrsEntryTask()">
+                            <i class="fas fa-filter"></i> Add "Clear Backlog" Check
+                        </button>
+                        <button class="btn btn-ghost btn-sm full-width" onclick="app.addSrsVolumeTask()" style="margin-top:5px;">
+                            <i class="fas fa-redo"></i> Add "100 Reviews" Drill
+                        </button>
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div class="task-list-area">
+                    <h3 style="margin-top:0;">Assignment Checklist</h3>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+                        These are the tasks the student will see. Drag to reorder.
+                        <br>
+                        <span style="color:var(--accent-green);">Green</span> = Auto-generated (Content). 
+                        <span style="color:var(--accent-orange);">Orange</span> = Manual. 
+                        <span style="color:var(--accent-cyan);">Cyan</span> = SRS Logic.
+                    </p>
+                    <div id="task-list-container">
+                        <!-- Tasks rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- READING PANEL -->
+        <div id="panel-reading" class="panel">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem; align-items:center;">
+                <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Drag blocks to reorder paragraphs.</p>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-ghost" onclick="app.openSmartImport()"><i class="fas fa-magic"></i> Import Text</button>
+                    <button class="btn btn-primary" onclick="app.addEmptyParagraph()"><i class="fas fa-plus"></i> New Para</button>
+                </div>
+            </div>
+            <div id="reading-list"></div>
+        </div>
+
+        <!-- VOCAB PANEL -->
+        <div id="panel-vocab" class="panel">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:1rem;">
+                <button class="btn btn-primary" onclick="app.addEmptyVocab()"><i class="fas fa-plus"></i> Add Word</button>
+            </div>
+            <table class="vocab-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px"></th>
+                        <th style="width:25%">Term</th>
+                        <th style="width:25%">Definition</th>
+                        <th style="width:15%">Chinese</th>
+                        <th>Notes</th>
+                        <th style="width:40px"></th>
+                    </tr>
+                </thead>
+                <tbody id="vocab-list"></tbody>
+            </table>
+        </div>
+
+        <!-- ACTIVITY PANEL -->
+        <div id="panel-activity" class="panel">
+            <div class="meta-group" style="margin-bottom:1rem;">
+                <label>Activity Title</label>
+                <input type="text" id="activity-title" placeholder="Game Name">
+            </div>
+            <label>HTML Content</label>
+            <textarea id="activity-content" style="width:100%; height:400px; background:var(--bg-panel); color:var(--text-main); border:1px solid var(--border); padding:1rem; font-family:'JetBrains Mono'; border-radius:8px;" placeholder="Paste HTML code here..."></textarea>
+        </div>
+
+        <!-- JSON PANEL -->
+        <div id="panel-json" class="panel">
+            <textarea id="json-preview" readonly></textarea>
+        </div>
+    </div>
+</div>
+
+<script>
+const app = {
+    state: {
+        paragraphs: [],
+        vocab: [],
+        activity: { title: "", content: "" },
+        meta: { title: "", id: "" },
+        customTasks: [] // Stores manually added tasks
+    },
+
+    init: function() {
+        this.isIframe = window.self !== window.top;
+        if (this.isIframe) {
+            document.getElementById('save-to-os-btn').style.display = 'inline-flex';
+            // Hide header brand to save space if needed
+            document.querySelector('.brand').style.display = 'none';
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'load') {
+                this.clearAll(true);
+                this.ingestJSON(event.data.payload);
+                this.updateUI();
+            } else if (event.data.type === 'setCollection') {
+                document.getElementById('export-collection-name').value = event.data.value;
+            }
+        });
+
+        const dropZone = document.getElementById('global-dropzone');
+        const body = document.body;
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            body.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+        body.addEventListener('drop', (e) => this.handleFiles(e.dataTransfer.files), false);
+        dropZone.addEventListener('click', () => document.getElementById('file-input').click());
+
+        this.readingSortable = new Sortable(document.getElementById('reading-list'), {
+            handle: '.drag-handle', animation: 150, onEnd: () => this.syncReadingFromDOM()
+        });
+        this.vocabSortable = new Sortable(document.getElementById('vocab-list'), {
+            handle: '.drag-cell', animation: 150, onEnd: () => this.syncVocabFromDOM()
+        });
+        this.taskSortable = new Sortable(document.getElementById('task-list-container'), {
+            animation: 150, onEnd: () => { }
+        });
+
+        document.getElementById('meta-title').addEventListener('input', (e) => {
+            this.state.meta.title = e.target.value;
+            this.renderTaskList(); // Update titles in tasks
+        });
+        document.getElementById('meta-id').addEventListener('input', (e) => this.state.meta.id = e.target.value);
+        document.getElementById('activity-title').addEventListener('input', (e) => this.state.activity.title = e.target.value);
+        document.getElementById('activity-content').addEventListener('input', (e) => this.state.activity.content = e.target.value);
+
+        this.updateUI();
+    },
+
+    switchTab: function(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        
+        const tabs = document.querySelectorAll('.tab');
+        if(tabName === 'tasks') tabs[0].classList.add('active');
+        if(tabName === 'reading') tabs[1].classList.add('active');
+        if(tabName === 'vocab') tabs[2].classList.add('active');
+        if(tabName === 'activity') tabs[3].classList.add('active');
+        if(tabName === 'json') {
+            tabs[4].classList.add('active');
+            this.updateJSONPreview();
+        }
+        document.getElementById(`panel-${tabName}`).classList.add('active');
+        
+        if (tabName === 'tasks') this.renderTaskList();
+    },
+
+    // --- TASK BUILDER LOGIC ---
+
+    addManualTask: function() {
+        const desc = document.getElementById('manual-task-desc').value.trim();
+        const url = document.getElementById('manual-task-url').value.trim();
+        if (!desc) { alert("Please enter a description."); return; }
+
+        const task = {
+            type: "external-link",
+            description: desc,
+            target: { taskId: "task_" + Date.now() },
+            url: url || null
+        };
+        this.state.customTasks.push(task);
+        document.getElementById('manual-task-desc').value = "";
+        document.getElementById('manual-task-url').value = "";
+        this.renderTaskList();
+    },
+
+    addRecordingTask: function() {
+        if (this.state.paragraphs.length === 0) {
+            alert("Please add Reading content first.");
+            return;
+        }
+        const duration = parseInt(document.getElementById('recording-duration').value) || 0;
+        const count = parseInt(document.getElementById('recording-count').value) || 1;
+        const title = this.state.meta.title || "Assignment";
+
+        const task = {
+            type: "record-audio",
+            description: `Record Reading (${count}x, min ${duration}s)`,
+            requiredCount: count,
+            requiredDuration: duration,
+            target: { collectionTitle: "Assignments", chapterTitle: title }
+        };
+        this.state.customTasks.push(task);
+        this.renderTaskList();
+    },
+
+    addSrsEntryTask: function() {
+        const task = { 
+            type: "srs-entry-check", 
+            description: "Clear SRS Backlog", 
+            target: null 
+        };
+        this.state.customTasks.push(task);
+        this.renderTaskList();
+    },
+
+    addSrsVolumeTask: function() {
+        const task = { 
+            type: "srs-volume-check", 
+            description: "100 Reviews", 
+            target: null 
+        };
+        this.state.customTasks.push(task);
+        this.renderTaskList();
+    },
+
+    removeCustomTask: function(index) {
+        this.state.customTasks.splice(index, 1);
+        this.renderTaskList();
+    },
+
+    // Auto-generate core content tasks (Learn Words, Read Chapter, Activity)
+    // BUT NOT the SRS logic tasks (Clearance/Volume) which are now manual/custom
+    getAutoGeneratedTasks: function(assignmentTitle) {
+        const title = assignmentTitle || this.state.meta.title || "Assignment";
+        const tasks = [];
+        
+        if(this.state.vocab.length > 0) {
+            tasks.push({ type: "srs-session", description: `Learn ${this.state.vocab.length} Words`, target: { collectionTitle: "Assignments", chapterTitle: title }, _auto: true });
+        }
+        if(this.state.paragraphs.length > 0) {
+            tasks.push({ type: "read-chapter", description: `Read: ${title}`, target: { collectionTitle: "Assignments", chapterTitle: title }, _auto: true });
+        }
+        if(this.state.activity.content.trim().length > 0) {
+            const actTitle = this.state.activity.title || title;
+            tasks.push({ 
+                type: "complete-activity", 
+                description: `Activity: ${actTitle}`, 
+                target: { activityTitle: actTitle }, 
+                _auto: true 
+            });
+        }
+        return tasks;
+    },
+
+    renderTaskList: function() {
+        const container = document.getElementById('task-list-container');
+        container.innerHTML = '';
+
+        // We combine Auto + Custom for the visual list, 
+        // but note that SortableJS in this simple implementation doesn't sync order back to 
+        // separate arrays easily. For v7, we simply render Custom tasks *after* Auto tasks in the list initially.
+        // If we want full reorderability mixed between auto/custom, we'd need to flatten them into a single state array.
+        // For simplicity in this tool, "Custom Tasks" (Orange/Cyan) will be appended below "Content Tasks" (Green).
+        // Since SRS Logic tasks are now "Custom", they can be ordered amongst themselves.
+
+        const autoTasks = this.getAutoGeneratedTasks();
+        autoTasks.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'task-card auto';
+            div.innerHTML = `
+                <div class="task-info">
+                    <h5>${task.description} <span class="task-type-badge">${task.type}</span></h5>
+                    <p>Auto-generated from content</p>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        this.state.customTasks.forEach((task, index) => {
+            let typeClass = 'manual';
+            if (task.type === 'record-audio') typeClass = 'recording';
+            if (task.type.startsWith('srs-')) typeClass = 'srs-logic';
+
+            const div = document.createElement('div');
+            div.className = `task-card ${typeClass}`;
+            div.innerHTML = `
+                <div class="task-info">
+                    <h5>${task.description} <span class="task-type-badge">${task.type}</span></h5>
+                    <p>${task.url ? 'URL: ' + task.url : (task.type === 'record-audio' ? `Min ${task.requiredDuration}s` : 'Manual/Logic')}</p>
+                </div>
+                <button class="btn-icon delete" onclick="app.removeCustomTask(${index})"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    // --- MODALS & EXPORT LOGIC ---
+
+    openExportModal: function() {
+        document.getElementById('export-modal').classList.add('active');
+    },
+
+    closeModal: function(id) {
+        document.getElementById(id).classList.remove('active');
+    },
+
+    saveToOS: function() {
+        const finalObj = this.getFinalObject('assignment');
+        if (this.isIframe) {
+            window.parent.postMessage({ type: 'srs1-save', payload: finalObj }, '*');
+        }
+    },
+
+    getFinalObject: function(type) {
+        let payload = {};
+        const title = this.state.meta.title || "Export";
+        const id = this.state.meta.id || Date.now().toString();
+        const collectionOverride = document.getElementById('export-collection-name').value.trim();
+        const effectiveCollection = collectionOverride || title;
+
+        if (type === 'assignment') {
+            const definitiveActivityTitle = this.state.activity.title || title;
+            const autoTasks = this.getAutoGeneratedTasks(title);
+            const finalTasks = [...autoTasks, ...this.state.customTasks];
+            finalTasks.forEach(t => delete t._auto);
+
+            finalTasks.forEach(t => {
+                if (t.type === 'record-audio' && t.target.chapterTitle !== title) {
+                    t.target.chapterTitle = title;
+                }
+            });
+
+            payload = {
+                assignmentId: id,
+                assignmentTitle: title,
+                isArchived: false,
+                tasks: finalTasks
+            };
+            
+            if(this.state.vocab.length > 0) payload.srsComponent = { courseName: effectiveCollection, deckName: `Assignment: ${title}`, wordList: this.state.vocab };
+            if(this.state.paragraphs.length > 0) payload.readerComponent = { collectionTitle: effectiveCollection, chapterTitle: title, chapterContent: this.state.paragraphs };
+            if(this.state.activity.content.trim().length > 0) {
+                payload.activityComponent = { 
+                    collectionTitle: effectiveCollection, 
+                    activityTitle: definitiveActivityTitle, 
+                    activityContent: this.state.activity.content 
+                };
+            }
+        } else if (type === 'reader') {
+            payload = { collectionTitle: effectiveCollection, chapterTitle: title, chapterContent: this.state.paragraphs };
+        } else if (type === 'srs') {
+            payload = { courseName: effectiveCollection || "Exported Course", deckName: title, wordList: this.state.vocab };
+        } else if (type === 'activity') {
+            payload = { collectionTitle: effectiveCollection, activityTitle: this.state.activity.title || "Activity", activityContent: this.state.activity.content };
+        }
+
+        return {
+            metadata: { app: "MrWoodsLearningSuite", version: 1.1, exportDate: new Date().toISOString() },
+            type: type === 'assignment' ? 'assignment' : (type === 'reader' ? 'reader-chapter' : (type === 'srs' ? 'srs-deck' : 'activity')),
+            payload: payload
+        };
+    },
+
+    processExport: function(type) {
+        const title = this.state.meta.title || "Export";
+        let filenameSuffix = "";
+        if (type === 'assignment') filenameSuffix = "_assignment";
+        else if (type === 'reader') {
+            if (this.state.paragraphs.length === 0) { alert("No reading content to export."); return; }
+            filenameSuffix = "_chapter";
+        } else if (type === 'srs') {
+            if (this.state.vocab.length === 0) { alert("No vocabulary to export."); return; }
+            filenameSuffix = "_deck";
+        } else if (type === 'activity') {
+            if (!this.state.activity.content.trim()) { alert("No activity HTML content."); return; }
+            filenameSuffix = "_activity";
+        }
+
+        const finalObj = this.getFinalObject(type);
+        const blob = new Blob([JSON.stringify(finalObj, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${title.replace(/[^a-z0-9]/gi, '_')}${filenameSuffix}.srs1`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.closeModal('export-modal');
+    },
+
+    // --- PASTE & IMPORT ---
+
+    openPasteModal: function() {
+        document.getElementById('paste-modal').classList.add('active');
+        document.getElementById('paste-area').value = "";
+        document.getElementById('paste-area').focus();
+    },
+
+    processPaste: function() {
+        const content = document.getElementById('paste-area').value.trim();
+        if (!content) return this.closeModal('paste-modal');
+
+        try {
+            const json = JSON.parse(content);
+            this.ingestJSON(json);
+            this.updateUI();
+            this.closeModal('paste-modal');
+            return;
+        } catch (e) { }
+
+        if (content.includes('<html') || content.includes('<!DOCTYPE')) {
+            this.state.activity.content = content;
+            this.state.activity.title = "Pasted Activity";
+            this.updateUI();
+            this.closeModal('paste-modal');
+            return;
+        }
+
+        this.closeModal('paste-modal');
+        this.openSmartImport();
+        document.getElementById('import-textarea').value = content;
+    },
+
+    openSmartImport: function() {
+        document.getElementById('text-import-modal').classList.add('active');
+        const area = document.getElementById('import-textarea');
+        if(!area.value) area.focus();
+    },
+
+    processSmartImport: function() {
+        const text = document.getElementById('import-textarea').value;
+        const method = document.getElementById('split-method').value;
+        if (!text.trim()) return this.closeModal('text-import-modal');
+
+        let chunks = [];
+        if (method === 'paragraph') {
+            chunks = text.split(/\n\s*\n/).filter(c => c.trim().length > 0);
+        } else if (method === 'line') {
+            chunks = text.split(/\n/).filter(c => c.trim().length > 0);
+        } else if (method === 'pdf') {
+            let processed = text.replace(/\r\n/g, '\n');
+            processed = processed.replace(/\n\s*\n/g, '||PARA_BREAK||');
+            processed = processed.replace(/\n/g, ' ');
+            chunks = processed.split('||PARA_BREAK||').filter(c => c.trim().length > 0);
+        }
+
+        chunks.forEach(chunk => {
+            this.state.paragraphs.push({
+                english: chunk.trim(),
+                simplified_english: "", chinese: "", korean: "", russian: "", vietnamese: ""
+            });
+        });
+
+        this.renderReadingList();
+        this.updateStats();
+        this.closeModal('text-import-modal');
+    },
+
+    // --- FILE HANDLING ---
+
+    handleFiles: function(fileList) {
+        Array.from(fileList).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => this.parseContent(file.name, e.target.result);
+            reader.readAsText(file);
+        });
+    },
+
+    parseContent: function(filename, content) {
+        try {
+            const json = JSON.parse(content);
+            this.ingestJSON(json); 
+        } catch (e) {
+            if (filename.endsWith('.html') || content.includes('<html>')) {
+                this.state.activity.content = content;
+                this.state.activity.title = filename.replace('.html', '');
+            } else {
+                const lines = content.split(/\n\s*\n/).map(l => l.trim()).filter(l => l.length > 0);
+                lines.forEach(l => this.state.paragraphs.push({ english: l, simplified_english:"", chinese:"", korean:"", russian:"", vietnamese:"" }));
+            }
+        }
+        this.updateUI();
+    },
+
+    ingestJSON: function(json) {
+        let payload = json.payload || json;
+        
+        if (payload.tasks || payload.srsComponent || payload.readerComponent || payload.activityComponent) {
+            if(payload.assignmentTitle) this.state.meta.title = payload.assignmentTitle;
+            if(payload.assignmentId) this.state.meta.id = payload.assignmentId;
+            if(payload.srsComponent?.wordList) this.state.vocab.push(...payload.srsComponent.wordList);
+            if(payload.readerComponent?.chapterContent) this.state.paragraphs.push(...payload.readerComponent.chapterContent);
+            if(payload.activityComponent?.activityContent) {
+                this.state.activity.content = payload.activityComponent.activityContent;
+                this.state.activity.title = payload.activityComponent.activityTitle;
+            }
+            if (payload.tasks) {
+                // Ingest ALL manual/logic tasks from the file
+                const manual = payload.tasks.filter(t => 
+                    t.type === 'external-link' || 
+                    t.type === 'record-audio' || 
+                    t.type === 'srs-entry-check' || 
+                    t.type === 'srs-volume-check'
+                );
+                this.state.customTasks.push(...manual);
+            }
+            return;
+        }
+
+        if (payload.chapterContent || payload.paragraphs) {
+            const paras = payload.chapterContent || payload.paragraphs;
+            if (Array.isArray(paras)) {
+                this.state.paragraphs.push(...paras);
+                if (payload.chapterTitle && !this.state.meta.title) this.state.meta.title = payload.chapterTitle;
+                return;
+            }
+        }
+
+        const list = Array.isArray(payload) ? payload : (payload.wordList || payload.items);
+        if (list && list.length > 0) {
+            const sample = list[0];
+            if (sample.english || sample.term) {
+                if (sample.simplified_english_definition !== undefined || sample.definition !== undefined) {
+                    const norm = list.map(i => ({
+                        english: i.english || i.term || "",
+                        simplified_english_definition: i.simplified_english_definition || i.definition || "",
+                        chinese: i.chinese || "", notes: i.notes || "",
+                        korean: i.korean || "", russian: i.russian || "", vietnamese: i.vietnamese || ""
+                    }));
+                    this.state.vocab.push(...norm);
+                } else {
+                    this.state.paragraphs.push(...list);
+                }
+            }
+        }
+    },
+
+    // --- UI UPDATES ---
+
+    updateUI: function() {
+        this.renderReadingList();
+        this.renderVocabList();
+        this.renderTaskList(); 
+        this.updateStats();
+        
+        if(!document.getElementById('meta-title').value) document.getElementById('meta-title').value = this.state.meta.title;
+        if(!document.getElementById('meta-id').value) document.getElementById('meta-id').value = this.state.meta.id;
+        if(!document.getElementById('activity-title').value) document.getElementById('activity-title').value = this.state.activity.title;
+        if(!document.getElementById('activity-content').value) document.getElementById('activity-content').value = this.state.activity.content;
+    },
+
+    updateStats: function() {
+        document.getElementById('stat-readings').textContent = this.state.paragraphs.length;
+        document.getElementById('stat-vocab').textContent = this.state.vocab.length;
+        document.getElementById('stat-activity').textContent = this.state.activity.content ? "Yes" : "No";
+        document.getElementById('badge-reading').textContent = this.state.paragraphs.length;
+        document.getElementById('badge-vocab').textContent = this.state.vocab.length;
+        document.getElementById('badge-activity').textContent = this.state.activity.content ? "1" : "0";
+    },
+
+    renderReadingList: function() {
+        const container = document.getElementById('reading-list');
+        container.innerHTML = '';
+        this.state.paragraphs.forEach((para, index) => {
+            const div = document.createElement('div');
+            div.className = 'para-card';
+            div.innerHTML = `
+                <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                <div class="para-content">
+                    <div class="para-header">
+                        <span>Paragraph ${index + 1}</span>
+                        <button class="btn-icon" style="width:auto; height:auto; padding:2px 6px; font-size:0.75rem;" onclick="this.closest('.para-card').classList.toggle('expanded')">
+                            <i class="fas fa-language"></i> Translations
+                        </button>
+                    </div>
+                    <textarea class="smart-textarea" onchange="app.updatePara(${index}, 'english', this.value)">${para.english || ''}</textarea>
+                    
+                    <div class="translation-grid">
+                        <div><label>Simple English</label><textarea class="smart-textarea" onchange="app.updatePara(${index}, 'simplified_english', this.value)">${para.simplified_english || ''}</textarea></div>
+                        <div><label>Chinese</label><textarea class="smart-textarea" onchange="app.updatePara(${index}, 'chinese', this.value)">${para.chinese || ''}</textarea></div>
+                        <div><label>Korean</label><textarea class="smart-textarea" onchange="app.updatePara(${index}, 'korean', this.value)">${para.korean || ''}</textarea></div>
+                        <div><label>Russian</label><textarea class="smart-textarea" onchange="app.updatePara(${index}, 'russian', this.value)">${para.russian || ''}</textarea></div>
+                        <div><label>Vietnamese</label><textarea class="smart-textarea" onchange="app.updatePara(${index}, 'vietnamese', this.value)">${para.vietnamese || ''}</textarea></div>
+                    </div>
+                </div>
+                <div class="para-actions">
+                    <button class="btn-icon delete" onclick="app.removePara(${index})"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    },
+
+    renderVocabList: function() {
+        const tbody = document.getElementById('vocab-list');
+        tbody.innerHTML = '';
+        this.state.vocab.forEach((word, index) => {
+            const tr = document.createElement('tr');
+            tr.className = 'vocab-row';
+            tr.innerHTML = `
+                <td class="drag-cell"><i class="fas fa-bars"></i></td>
+                <td><textarea class="vocab-textarea" onchange="app.updateVocab(${index}, 'english', this.value)">${word.english || ''}</textarea></td>
+                <td><textarea class="vocab-textarea" onchange="app.updateVocab(${index}, 'simplified_english_definition', this.value)">${word.simplified_english_definition || ''}</textarea></td>
+                <td><textarea class="vocab-textarea" onchange="app.updateVocab(${index}, 'chinese', this.value)">${word.chinese || ''}</textarea></td>
+                <td><textarea class="vocab-textarea" onchange="app.updateVocab(${index}, 'notes', this.value)">${word.notes || ''}</textarea></td>
+                <td><button class="btn-icon delete" onclick="app.removeVocab(${index})"><i class="fas fa-times"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    // --- DATA ACTIONS ---
+    addEmptyParagraph: function() {
+        this.state.paragraphs.push({ english: "", simplified_english:"", chinese:"" });
+        this.renderReadingList(); this.updateStats();
+    },
+    removePara: function(index) {
+        if(!confirm("Delete paragraph?")) return;
+        this.state.paragraphs.splice(index, 1);
+        this.renderReadingList(); this.updateStats();
+    },
+    updatePara: function(index, key, val) { this.state.paragraphs[index][key] = val; },
+
+    addEmptyVocab: function() {
+        this.state.vocab.unshift({ english: "", simplified_english_definition: "" });
+        this.renderVocabList(); this.updateStats();
+    },
+    removeVocab: function(index) {
+        this.state.vocab.splice(index, 1);
+        this.renderVocabList(); this.updateStats();
+    },
+    updateVocab: function(index, key, val) { this.state.vocab[index][key] = val; },
+
+    syncReadingFromDOM: function() {
+        const cards = document.querySelectorAll('.para-card');
+        const newOrder = [];
+        cards.forEach(card => {
+            const inputs = card.querySelectorAll('textarea');
+            newOrder.push({
+                english: inputs[0].value,
+                simplified_english: inputs[1].value,
+                chinese: inputs[2].value,
+                korean: inputs[3].value,
+                russian: inputs[4].value,
+                vietnamese: inputs[5].value
+            });
+        });
+        this.state.paragraphs = newOrder;
+    },
+
+    syncVocabFromDOM: function() {
+        const rows = document.querySelectorAll('.vocab-row');
+        const newOrder = [];
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('textarea');
+            newOrder.push({
+                english: inputs[0].value,
+                simplified_english_definition: inputs[1].value,
+                chinese: inputs[2].value,
+                notes: inputs[3].value,
+                korean:"", russian:"", vietnamese:""
+            });
+        });
+        this.state.vocab = newOrder;
+    },
+
+    clearAll: function(force = false) {
+        if(!force && !confirm("Clear workspace?")) return;
+        this.state.paragraphs = [];
+        this.state.vocab = [];
+        this.state.activity = { title: "", content: "" };
+        this.state.meta = { title: "", id: "" };
+        this.state.customTasks = [];
+        document.querySelectorAll('input').forEach(i => i.value = "");
+        document.querySelector('#activity-content').value = "";
+        this.updateUI();
+    },
+
+    updateJSONPreview: function() {
+        const dummy = { note: "Click export to generate full structure" };
+        document.getElementById('json-preview').value = JSON.stringify(this.state, null, 4);
+    }
+};
+
+app.init();
+</script>
+</body>
+</html>
