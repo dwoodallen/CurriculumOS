@@ -27,16 +27,19 @@ CurriculumOS is a powerful, local-first environment designed for educators and c
 
 1. **Download**: Grab the latest `.dmg` from the [Releases](https://github.com/dwoodallen/CurriculumOS/releases) page.
 2. **Install**: Open the `.dmg` and drag CurriculumOS to your Applications folder.
-3. **Launch**: Open the app and start building!
+3. **Prerequisites (Optional)**:
+   To use the advanced PDF compilation features, you'll need:
+   - **LaTeX**: Install [MacTeX](https://www.tug.org/mactex/) or run `brew install --cask mactex-no-gui`
+   - **Typst**: Run `brew install typst`
 
 ## 👩‍💻 For Developers
 
 If you want to contribute or build from source:
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
-- [MacTeX](https://www.tug.org/mactex/) (Optional, for LaTeX compilation)
-- [Typst](https://typst.app/) (Optional, for Typst compilation)
+- **Node.js**: [Download](https://nodejs.org/) or run `brew install node`
+- **MacTeX** (Optional, for LaTeX)
+- **Typst** (Optional, for Typst)
 
 ### Installation
 1. Clone the repository:
