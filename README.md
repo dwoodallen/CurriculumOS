@@ -3,6 +3,14 @@ The vibecoder educator's all-in-one solution.
 
 **Frictionless curriculum design. Directly synced to your file system.**
 
+---
+
+### 📥 [Download Latest Release for macOS](https://github.com/yourusername/CurriculumOS/releases/latest)
+> [!IMPORTANT]
+> CurriculumOS is currently optimized for **macOS only**.
+
+---
+
 CurriculumOS is a powerful, local-first environment designed for educators and curriculum designers. It provides a seamless interface for organizing learning materials, generating previews, and managing educational assets directly from your local directory.
 
 ## 🚀 Features
@@ -15,27 +23,31 @@ CurriculumOS is a powerful, local-first environment designed for educators and c
 - **Asset Management**: Attach videos, EPUBs, and external links directly to your curriculum nodes.
 - **Customizable Structure**: Organize your courses into Units, Chapters, or any custom hierarchy you prefer.
 
-## 🛠️ Getting Started
+## 🛠️ Getting Started (For Users)
+
+1. **Download**: Grab the latest `.dmg` from the [Releases](https://github.com/dwoodallen/CurriculumOS/releases) page.
+2. **Install**: Open the `.dmg` and drag CurriculumOS to your Applications folder.
+3. **Launch**: Open the app and start building!
+
+## 👩‍💻 For Developers
+
+If you want to contribute or build from source:
 
 ### Prerequisites
-
 - [Node.js](https://nodejs.org/) (v16 or higher recommended)
 - [MacTeX](https://www.tug.org/mactex/) (Optional, for LaTeX compilation)
 - [Typst](https://typst.app/) (Optional, for Typst compilation)
 
 ### Installation
-
-1. Clone the repository (or download the source):
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/CurriculumOS.git
    cd CurriculumOS
    ```
-
 2. Install dependencies:
    ```bash
    npm install
    ```
-
 3. Start the application:
    ```bash
    npm start
@@ -57,4 +69,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👤 Author
 
 **David Wood**
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@yourusername](https://github.com/dwoodallen)
