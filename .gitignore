@@ -10,6 +10,7 @@ build/
 *.zip
 
 # Temporary files
+scratch/
 Zenith_Temp/
 Zenith_Data/Files/
 Zenith_Data/state.json
